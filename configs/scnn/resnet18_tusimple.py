@@ -67,7 +67,7 @@ val_process = [
     dict(type='ToTensor', keys=['img']),
 ] 
 
-dataset_path = './data/tusimple'
+dataset_path = '/home/gautam/e2e/lane_detection/2d_approaches/dataset/tusimple'
 dataset = dict(
     train=dict(
         type='TuSimple',
@@ -96,5 +96,5 @@ ignore_label = 255
 log_interval = 100
 eval_ep = 1
 save_ep = epochs
-test_json_file='data/tusimple/test_label.json'
+test_json_file='/home/gautam/e2e/lane_detection/2d_approaches/dataset/tusimple/test_label.json'
 lr_update_by_epoch = False

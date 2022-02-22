@@ -1,5 +1,6 @@
 import time
 import torch
+from torch.autograd import grad 
 from tqdm import tqdm
 import pytorch_warmup as warmup
 import numpy as np
@@ -24,6 +25,9 @@ class Runner(object):
         self.cfg = cfg
         self.recorder = build_recorder(self.cfg)
         self.net = build_net(self.cfg)
+        # for name, module in self.net.named_modules():
+        #     print(name)
+        # print(self.net.Detector)
         # self.net.to(torch.device('cuda'))
         # self.net = torch.nn.parallel.DataParallel(
         #         self.net, device_ids = range(self.cfg.gpus)).cuda()
@@ -66,6 +70,39 @@ class Runner(object):
             data = self.to_cuda(data)
             output = self.net(data)
             self.optimizer.zero_grad()
+            
+            print(output.keys())
+            print(data.keys())
+                    
+            
+            #TODO: Implement the RSC algorithm and check it enhances the accuracy. 
+            """
+            RSC algorithm: https://github.com/facebookresearch/DomainBed/blob/25f173caa689f20828629b2e42f90193f203fdfa/domainbed/algorithms.py#L866
+            """
+            bbone_features = output['bbone_outs']
+            print(bbone_features.shape)
+            # a = output['outs']
+            # # print(a['seg'].shape)
+            # print( data['mask'].shape)
+            # # Equation (1): compute gradients with respect to representation            
+            # all_g = grad((output['outs'] * data['mask']).sum(), bbone_features) ## this loss can be manually calcualted also using outs *
+            # # all_g_0 = all_g[0]
+            # print(all_g.shape)
+
+
+            # # Equation (2): compute top-gradient-percentile mask
+            # #TODO: set the hyperparam for muting the gradients drop_f
+            # precentiles = np.percentile(all_g.cpu(), 33, axis =1)
+            # percentiles = torch.Tensor(percentiles)
+            # percentiles = percentiles.unsqueeze(1).repeat(1, all_g.size(1))
+
+            # maskf = all_g.lt(precentiles.cuda()).float()
+
+            #  # Equation (3): mute top-gradient-percentile activations
+            #  all_f_muted = 
+
+
+
             loss = output['loss']
             loss.backward()
             self.optimizer.step()

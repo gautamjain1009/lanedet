@@ -29,8 +29,12 @@ class Detector(nn.Module):
             fea = self.neck(fea)
 
         if self.training:
+            
+            output['bbone_outs'] = fea
+            
             out = self.heads(fea, batch=batch)
             output.update(self.heads.loss(out, batch))
+            output['outs'] = out
         else:
             output = self.heads(fea)
 
