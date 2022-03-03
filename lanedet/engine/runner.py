@@ -18,6 +18,8 @@ from mmcv.parallel import MMDataParallel
 
 from lanedet.models.nets.detector import *
 from lanedet.models.heads.lane_seg import *
+torch.cuda.empty_cache()
+torch.cuda.memory_summary(device=None, abbreviated=False)
 
 class Runner(object):
     def __init__(self, cfg):
@@ -81,7 +83,7 @@ class Runner(object):
             
             self.optimizer.zero_grad()
             
-            ###################################### 
+            ######################################  
             all_f = self.net.featurizer(data['img']) ### list of Resnet layers out
             # print(all_f[0].shape)
             
@@ -96,28 +98,27 @@ class Runner(object):
             """
             RSC algorithm: https://github.com/facebookresearch/DomainBed/blob/25f173caa689f20828629b2e42f90193f203fdfa/domainbed/algorithms.py#L866
             """
-            
             all_p = torch.max(all_p['seg'], 1)[0]
-            print("===> predictions shape", all_p.shape)
+            # print("===> predictions shape", all_p.shape)
             
-            print(data['mask'].shape)
+            # print(data['mask'].shape)
             def muted_gradients(all_p, data, all_f):
                 # Equation (1): compute gradients with respect to representation            
                 all_g = grad((all_p * data['mask']).sum(), all_f,retain_graph=True) ## this loss can be manually calcualted also using outs *
                 all_g_0 = all_g[0]
-                print("===>Gradient_shape", all_g_0.shape)
+                # print("===>Gradient_shape", all_g_0.shape)
 
                 # Equation (2): compute top-gradient-percentile mask
                 #TODO: set the hyperparam for muting the gradients drop_f
                 
                 percentiles = np.percentile(all_g_0.cpu(), 33, axis =0) ## TODO:confirm does axis =0 means percentile taken along batches 
                 percentiles = torch.Tensor(percentiles)
-                print(percentiles.shape)
-                percentiles = percentiles.unsqueeze(0).repeat(8,1,1,1)
+                # print(percentiles.shape)
+                percentiles = percentiles.unsqueeze(0).repeat(4,1,1,1)
 
                 maskf = all_g_0.lt(percentiles.cuda()).float()
-                print("** printing masks shapes")
-                print(maskf.shape)
+                # print("** printing masks shapes")
+                # print(maskf.shape)
                 
                 # Equation (3): mute top-gradient-percentile activations
                 # all_f_muted = [maskf * bbone_f for bbone_f in bbone_features]
@@ -126,11 +127,12 @@ class Runner(object):
                 return all_f_muted
 
             all_f_muted = [muted_gradients(all_p, data, layerwise_features) for layerwise_features in all_f]
-          
+
             # Equation (4): compute muted predictions
             muted_output = self.net.classifier(all_f_muted, data)
             
             loss = muted_output['loss']
+            print(loss)
             ##############################################
             loss.backward()
             
@@ -182,8 +184,6 @@ class Runner(object):
                 all_f = self.net.featurizer(data['img']) ### list of Resnet layers out
                 
                 output = self.net.classifier(all_f, data) # (batch_size,classes,h,W)               
-                
-
                 output = self.net.get_lanes(output)
                 predictions.extend(output)
             

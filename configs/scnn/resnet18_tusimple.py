@@ -32,7 +32,7 @@ optimizer = dict(
 )
 
 epochs = 100
-batch_size = 8 
+batch_size = 4
 total_iter = (3616 // batch_size + 1) * epochs 
 import math
 scheduler = dict(

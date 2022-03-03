@@ -19,7 +19,6 @@ class Detector(nn.Module):
         return self.heads.get_lanes(output)
 
     def featurizer(self, data):
-        print("To check if i am in the function::",data.shape)
         fea = self.backbone(data)
         
         return fea

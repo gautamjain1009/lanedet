@@ -37,7 +37,6 @@ def load_network_specified(net, model_dir, logger=None):
         state[k] = v
     net.load_state_dict(state, strict=False)
 
-
 def load_network(net, model_dir, finetune_from=None, logger=None):
     if finetune_from:
         if logger:
